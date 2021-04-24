@@ -37,19 +37,20 @@ mod tests {
 
     #[test]
     fn fix_warnings_test() {
-        let mut fixer = KeyWithoutValueFixer::default();
-        let mut lines = vec![
-            line_entry(1, 3, "FOO"),
-            line_entry(2, 3, "Z=Y"),
-            blank_line_entry(3, 3),
-        ];
-        let mut warning = Warning::new(
-            lines[0].clone(),
-            LintKind::KeyWithoutValue,
-            "The FOO key should be with a value or have an equal sign",
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut KeyWithoutValueFixer::default(),
+            vec![
+                TestLine::new("FOO").warning(
+                    LintKind::KeyWithoutValue,
+                    "The FOO key should be with a value or have an equal sign",
+                ),
+                TestLine::new("Z=Y"),
+                TestLine::new("\n"),
+            ]
+            .into(),
         );
 
-        assert_eq!(Some(1), fixer.fix_warnings(vec![&mut warning], &mut lines));
-        assert_eq!("FOO=", lines[0].raw_string);
+        assert_eq!(Some(1), fix_count);
+        assert_eq!(vec!["FOO=", "Z=Y", "\n"], fixed_lines);
     }
 }

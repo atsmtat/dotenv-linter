@@ -39,24 +39,30 @@ mod tests {
 
     #[test]
     fn fix_warnings_test() {
-        let mut fixer = EndingBlankLineFixer::default();
-        let mut lines = vec![line_entry(1, 2, "FOO=BAR"), line_entry(2, 2, "Z=Y")];
-        let mut warning = Warning::new(
-            lines[1].clone(),
-            LintKind::EndingBlankLine,
-            "No blank line at the end of the file",
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut EndingBlankLineFixer::default(),
+            vec![
+                TestLine::new("FOO=BAR"),
+                TestLine::new("Z=Y").warning(
+                    LintKind::EndingBlankLine,
+                    "No blank line at the end of the file",
+                ),
+            ]
+            .into(),
         );
 
-        assert_eq!(Some(1), fixer.fix_warnings(vec![&mut warning], &mut lines));
-        assert_eq!("\n", lines[2].raw_string);
+        assert_eq!(Some(1), fix_count);
+        assert_eq!(vec!["FOO=BAR", "Z=Y", "\n"], fixed_lines);
     }
 
     #[test]
     fn ending_blank_line_exist_test() {
-        let mut fixer = EndingBlankLineFixer::default();
-        let mut lines = vec![line_entry(1, 2, "FOO=BAR"), line_entry(2, 2, LF)];
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut EndingBlankLineFixer::default(),
+            vec![TestLine::new("FOO=BAR"), TestLine::new("\n")].into(),
+        );
 
-        assert_eq!(Some(0), fixer.fix_warnings(vec![], &mut lines));
-        assert_eq!(lines.len(), 2);
+        assert_eq!(Some(0), fix_count);
+        assert_eq!(vec!["FOO=BAR", "\n"], fixed_lines);
     }
 }

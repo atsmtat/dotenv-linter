@@ -13,7 +13,7 @@ mod substitution_key;
 mod trailing_whitespace;
 mod unordered_key;
 
-trait Fix {
+pub trait Fix {
     fn name(&self) -> LintKind;
 
     fn fix_warnings(
@@ -107,27 +107,43 @@ mod tests {
 
     #[test]
     fn run_with_empty_warnings_test() {
-        let mut lines = vec![line_entry(1, 2, "A=B"), blank_line_entry(2, 2)];
-        let mut warnings: Vec<Warning> = Vec::new();
+        let (mut lines, mut warnings) =
+            TestLineEntries::new(vec![TestLine::new("A=B"), TestLine::new("\n")])
+                .lines_and_warnings();
 
         assert_eq!(0, run(&mut warnings, &mut lines, &[]));
     }
 
     #[test]
     fn run_with_fixable_warning_test() {
-        let mut lines = vec![
-            line_entry(1, 3, "A=B"),
-            line_entry(2, 3, "c=d"),
-            blank_line_entry(3, 3),
-        ];
-        let mut warnings = vec![Warning::new(
-            lines[1].clone(),
-            LintKind::LowercaseKey,
-            "The c key should be in uppercase",
-        )];
+        let (mut lines, mut warnings) = TestLineEntries::new(vec![
+            TestLine::new("A=B"),
+            TestLine::new("c=d")
+                .warning(LintKind::LowercaseKey, "The c key should be in uppercase"),
+            TestLine::new("\n"),
+        ])
+        .lines_and_warnings();
 
         assert_eq!(1, run(&mut warnings, &mut lines, &[]));
         assert_eq!("C=d", lines[1].raw_string);
+    }
+
+    #[test]
+    fn run_with_multiple_warning_test() {
+        let (mut lines, mut warnings) = TestLineEntries::new(vec![
+            TestLine::new("A=B"),
+            TestLine::new("c")
+                .warning(LintKind::LowercaseKey, "The c key should be in uppercase")
+                .warning(
+                    LintKind::KeyWithoutValue,
+                    "The c key should be with a value or have an equal sign",
+                ),
+            TestLine::new("\n"),
+        ])
+        .lines_and_warnings();
+
+        assert_eq!(2, run(&mut warnings, &mut lines, &[]));
+        assert_eq!("C=", lines[1].raw_string);
     }
 
     #[test]
@@ -155,27 +171,19 @@ mod tests {
 
     #[test]
     fn new_warnings_after_fix_test() {
-        let mut lines = vec![
-            line_entry(1, 5, "A1=1"),
-            line_entry(2, 5, "A2=2"),
-            line_entry(3, 5, "a0=0"),
-            line_entry(4, 5, "a2=2"),
-            blank_line_entry(5, 5),
-        ];
-        let mut warnings = vec![
-            Warning::new(
-                lines[2].clone(),
-                LintKind::LowercaseKey,
-                "The a0 key should be in uppercase",
-            ),
-            Warning::new(
-                lines[3].clone(),
-                LintKind::LowercaseKey,
-                "The a2 key should be in uppercase",
-            ),
-        ];
+        let (mut lines, mut warnings) = TestLineEntries::new(vec![
+            TestLine::new("A1=1"),
+            TestLine::new("A2=2"),
+            TestLine::new("a0=0")
+                .warning(LintKind::LowercaseKey, "The a0 key should be in uppercase"),
+            TestLine::new("a2=2")
+                .warning(LintKind::LowercaseKey, "The a2 key should be in uppercase"),
+            TestLine::new("\n"),
+        ])
+        .lines_and_warnings();
 
         assert_eq!(2, run(&mut warnings, &mut lines, &[]));
+
         assert_eq!("A0=0", lines[0].raw_string);
         assert_eq!("A1=1", lines[1].raw_string);
         assert_eq!("A2=2", lines[2].raw_string);
@@ -185,25 +193,16 @@ mod tests {
 
     #[test]
     fn skip_duplicated_key() {
-        let mut lines = vec![
-            line_entry(1, 5, "A1=1"),
-            line_entry(2, 5, "A2=2"),
-            line_entry(3, 5, "a0=0"),
-            line_entry(4, 5, "a2=2"),
-            blank_line_entry(5, 5),
-        ];
-        let mut warnings = vec![
-            Warning::new(
-                lines[2].clone(),
-                LintKind::LowercaseKey,
-                "The a0 key should be in uppercase",
-            ),
-            Warning::new(
-                lines[3].clone(),
-                LintKind::LowercaseKey,
-                "The a2 key should be in uppercase",
-            ),
-        ];
+        let (mut lines, mut warnings) = TestLineEntries::new(vec![
+            TestLine::new("A1=1"),
+            TestLine::new("A2=2"),
+            TestLine::new("a0=0")
+                .warning(LintKind::LowercaseKey, "The a0 key should be in uppercase"),
+            TestLine::new("a2=2")
+                .warning(LintKind::LowercaseKey, "The a2 key should be in uppercase"),
+            TestLine::new("\n"),
+        ])
+        .lines_and_warnings();
 
         assert_eq!(
             2,
@@ -218,25 +217,16 @@ mod tests {
 
     #[test]
     fn skip_unordered_key() {
-        let mut lines = vec![
-            line_entry(1, 5, "A1=1"),
-            line_entry(2, 5, "A2=2"),
-            line_entry(3, 5, "a0=0"),
-            line_entry(4, 5, "a2=2"),
-            blank_line_entry(5, 5),
-        ];
-        let mut warnings = vec![
-            Warning::new(
-                lines[2].clone(),
-                LintKind::LowercaseKey,
-                "The a0 key should be in uppercase",
-            ),
-            Warning::new(
-                lines[3].clone(),
-                LintKind::LowercaseKey,
-                "The a2 key should be in uppercase",
-            ),
-        ];
+        let (mut lines, mut warnings) = TestLineEntries::new(vec![
+            TestLine::new("A1=1"),
+            TestLine::new("A2=2"),
+            TestLine::new("a0=0")
+                .warning(LintKind::LowercaseKey, "The a0 key should be in uppercase"),
+            TestLine::new("a2=2")
+                .warning(LintKind::LowercaseKey, "The a2 key should be in uppercase"),
+            TestLine::new("\n"),
+        ])
+        .lines_and_warnings();
 
         assert_eq!(2, run(&mut warnings, &mut lines, &[LintKind::UnorderedKey]));
         assert_eq!("A1=1", lines[0].raw_string);

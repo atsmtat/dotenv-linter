@@ -95,51 +95,35 @@ mod tests {
 
     #[test]
     fn fix_warnings_test() {
-        let mut fixer = LeadingCharacterFixer::default();
-        let mut lines = vec![
-            line_entry(1, 7, ".FOO=BAR"),
-            line_entry(2, 7, " Z=Y"),
-            line_entry(3, 7, "*BAR=BAZ"),
-            line_entry(4, 7, "1QUX=QUUX"),
-            line_entry(5, 7, "_QUUX=FOOBAR"),
-            line_entry(6, 7, "KEY=VALUE"),
-            blank_line_entry(6, 7),
-        ];
+        let warning_name = LintKind::LeadingCharacter;
+        let message = "Invalid leading character detected";
 
-        let mut warnings = vec![
-            Warning::new(
-                lines[0].clone(),
-                LintKind::LeadingCharacter,
-                "Invalid leading character detected",
-            ),
-            Warning::new(
-                lines[1].clone(),
-                LintKind::LeadingCharacter,
-                "Invalid leading character detected",
-            ),
-            Warning::new(
-                lines[2].clone(),
-                LintKind::LeadingCharacter,
-                "Invalid leading character detected",
-            ),
-            Warning::new(
-                lines[3].clone(),
-                LintKind::LeadingCharacter,
-                "Invalid leading character detected",
-            ),
-        ];
-
-        assert_eq!(
-            Some(4),
-            fixer.fix_warnings(warnings.iter_mut().collect(), &mut lines)
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut LeadingCharacterFixer::default(),
+            vec![
+                TestLine::new(".FOO=BAR").warning(warning_name, message),
+                TestLine::new(" Z=Y").warning(warning_name, message),
+                TestLine::new("*BAR=BAZ").warning(warning_name, message),
+                TestLine::new("1QUX=QUUX").warning(warning_name, message),
+                TestLine::new("_QUUX=FOOBAR"),
+                TestLine::new("KEY=VALUE"),
+                TestLine::new("\n"),
+            ]
+            .into(),
         );
 
-        assert_eq!("FOO=BAR", lines[0].raw_string);
-        assert_eq!("Z=Y", lines[1].raw_string);
-        assert_eq!("BAR=BAZ", lines[2].raw_string);
-        assert_eq!("QUX=QUUX", lines[3].raw_string);
-        assert_eq!("_QUUX=FOOBAR", lines[4].raw_string);
-        assert_eq!("KEY=VALUE", lines[5].raw_string);
-        assert_eq!("\n", lines[6].raw_string);
+        assert_eq!(Some(4), fix_count);
+        assert_eq!(
+            vec![
+                "FOO=BAR",
+                "Z=Y",
+                "BAR=BAZ",
+                "QUX=QUUX",
+                "_QUUX=FOOBAR",
+                "KEY=VALUE",
+                "\n",
+            ],
+            fixed_lines
+        );
     }
 }

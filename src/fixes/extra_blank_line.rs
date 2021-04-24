@@ -27,59 +27,52 @@ mod tests {
 
     #[test]
     fn no_blank_lines_test() {
-        let mut fixer = ExtraBlankLineFixer::default();
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut ExtraBlankLineFixer::default(),
+            vec![
+                TestLine::new("FOO=BAR"),
+                TestLine::new(""),
+                TestLine::new("HOGE=HUGA"),
+            ]
+            .into(),
+        );
 
-        let warnings = vec![];
-        let lines = vec![
-            line_entry(1, 3, "FOO=BAR"),
-            line_entry(2, 3, ""),
-            line_entry(3, 3, "HOGE=HUGA"),
-        ];
-        let mut fixing_lines = lines.clone();
-
-        assert_eq!(Some(0), fixer.fix_warnings(warnings, &mut fixing_lines));
-        assert_eq!(lines, fixing_lines);
+        assert_eq!(Some(0), fix_count);
+        assert_eq!(vec!["FOO=BAR", "", "HOGE=HUGA"], fixed_lines);
     }
 
     #[test]
     fn fix_one_extra_blank_line_test() {
-        let mut fixer = ExtraBlankLineFixer::default();
-
-        let line1 = line_entry(1, 4, "FOO=BAR");
-        let line2 = line_entry(2, 4, "");
-        let line3 = line_entry(3, 4, "");
-        let line4 = line_entry(4, 4, "HOGE=HUGA");
-        let mut warning = Warning::new(
-            line3.clone(),
-            LintKind::ExtraBlankLine,
-            "Extra blank line detected",
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut ExtraBlankLineFixer::default(),
+            vec![
+                TestLine::new("FOO=BAR"),
+                TestLine::new(""),
+                TestLine::new("").warning(LintKind::ExtraBlankLine, "Extra blank line detected"),
+                TestLine::new("HOGE=HUGA"),
+            ]
+            .into(),
         );
-        let warnings = vec![&mut warning];
-        let mut lines = vec![line1, line2, line3, line4];
-        assert_eq!(Some(1), fixer.fix_warnings(warnings, &mut lines));
+
+        assert_eq!(Some(1), fix_count);
+        assert_eq!(vec!["FOO=BAR", "", "HOGE=HUGA"], fixed_lines);
     }
 
     #[test]
     fn fix_multiple_blank_lines_test() {
-        let mut fixer = ExtraBlankLineFixer::default();
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut ExtraBlankLineFixer::default(),
+            vec![
+                TestLine::new("FOO=BAR"),
+                TestLine::new(""),
+                TestLine::new("").warning(LintKind::ExtraBlankLine, "Extra blank line detected"),
+                TestLine::new("").warning(LintKind::ExtraBlankLine, "Extra blank line detected"),
+                TestLine::new("HOGE=HUGA"),
+            ]
+            .into(),
+        );
 
-        let line1 = line_entry(1, 5, "FOO=BAR");
-        let line2 = line_entry(2, 5, "");
-        let line3 = line_entry(3, 5, "");
-        let line4 = line_entry(4, 5, "");
-        let line5 = line_entry(5, 5, "HOGE=HUGA");
-        let mut warning1 = Warning::new(
-            line3.clone(),
-            LintKind::ExtraBlankLine,
-            "Extra blank line detected",
-        );
-        let mut warning2 = Warning::new(
-            line4.clone(),
-            LintKind::ExtraBlankLine,
-            "Extra blank line detected",
-        );
-        let warnings = vec![&mut warning1, &mut warning2];
-        let mut lines = vec![line1, line2, line3, line4, line5];
-        assert_eq!(Some(2), fixer.fix_warnings(warnings, &mut lines));
+        assert_eq!(Some(2), fix_count);
+        assert_eq!(vec!["FOO=BAR", "", "HOGE=HUGA"], fixed_lines);
     }
 }

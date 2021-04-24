@@ -37,19 +37,18 @@ mod tests {
 
     #[test]
     fn fix_warnings_test() {
-        let mut fixer = TrailingWhitespaceFixer::default();
-        let mut lines = vec![
-            line_entry(1, 3, "FOO=BAR "),
-            line_entry(2, 3, "Z=Y"),
-            blank_line_entry(3, 3),
-        ];
-        let mut warning = Warning::new(
-            lines[0].clone(),
-            LintKind::TrailingWhitespace,
-            "Trailing whitespace detected",
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut TrailingWhitespaceFixer::default(),
+            vec![
+                TestLine::new("FOO=BAR ")
+                    .warning(LintKind::TrailingWhitespace, "Trailing whitespace detected"),
+                TestLine::new("Z=Y"),
+                TestLine::new(""),
+            ]
+            .into(),
         );
 
-        assert_eq!(Some(1), fixer.fix_warnings(vec![&mut warning], &mut lines));
-        assert_eq!("FOO=BAR", lines[0].raw_string);
+        assert_eq!(Some(1), fix_count);
+        assert_eq!(vec!["FOO=BAR", "Z=Y", ""], fixed_lines);
     }
 }

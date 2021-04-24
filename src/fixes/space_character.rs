@@ -48,30 +48,23 @@ mod tests {
 
     #[test]
     fn fix_warnings_test() {
-        let mut fixer = SpaceCharacterFixer::default();
-        let mut lines = vec![
-            line_entry(1, 3, "FOO= BAR"),
-            line_entry(2, 3, "Z =Y"),
-            blank_line_entry(3, 3),
-        ];
-        let mut warnings = vec![
-            Warning::new(
-                lines[0].clone(),
-                LintKind::SpaceCharacter,
-                "The line has spaces around equal sign",
-            ),
-            Warning::new(
-                lines[1].clone(),
-                LintKind::SpaceCharacter,
-                "The line has spaces around equal sign",
-            ),
-        ];
-
-        assert_eq!(
-            Some(2),
-            fixer.fix_warnings(warnings.iter_mut().collect(), &mut lines)
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut SpaceCharacterFixer::default(),
+            vec![
+                TestLine::new("FOO= BAR").warning(
+                    LintKind::SpaceCharacter,
+                    "The line has spaces around equal sign",
+                ),
+                TestLine::new("Z =Y").warning(
+                    LintKind::SpaceCharacter,
+                    "The line has spaces around equal sign",
+                ),
+                TestLine::new(""),
+            ]
+            .into(),
         );
-        assert_eq!("FOO=BAR", lines[0].raw_string);
-        assert_eq!("Z=Y", lines[1].raw_string);
+
+        assert_eq!(Some(2), fix_count);
+        assert_eq!(vec!["FOO=BAR", "Z=Y", ""], fixed_lines);
     }
 }

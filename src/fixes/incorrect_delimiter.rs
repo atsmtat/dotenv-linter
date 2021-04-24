@@ -62,19 +62,23 @@ mod tests {
 
     #[test]
     fn fix_warnings_test() {
-        let mut fixer = IncorrectDelimiterFixer::default();
-        let mut lines = vec![
-            line_entry(1, 3, "RAILS-ENV=development"),
-            line_entry(2, 3, "RAILS_ENV=true"),
-            blank_line_entry(3, 3),
-        ];
-        let mut warning = Warning::new(
-            lines[0].clone(),
-            LintKind::IncorrectDelimiter,
-            "The RAILS-ENV key has has an incorrect delimter",
+        let (fix_count, fixed_lines) = run_fix_warnings(
+            &mut IncorrectDelimiterFixer::default(),
+            vec![
+                TestLine::new("RAILS-ENV=development").warning(
+                    LintKind::IncorrectDelimiter,
+                    "The RAILS-ENV key has has an incorrect delimter",
+                ),
+                TestLine::new("RAILS_ENV=true"),
+                TestLine::new("\n"),
+            ]
+            .into(),
         );
 
-        assert_eq!(Some(1), fixer.fix_warnings(vec![&mut warning], &mut lines));
-        assert_eq!("RAILS_ENV=development", lines[0].raw_string);
+        assert_eq!(Some(1), fix_count);
+        assert_eq!(
+            vec!["RAILS_ENV=development", "RAILS_ENV=true", "\n"],
+            fixed_lines
+        );
     }
 }
